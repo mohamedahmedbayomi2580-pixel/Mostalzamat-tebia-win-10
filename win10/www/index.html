@@ -159,7 +159,7 @@ return`<div class="card"><h3>كشف حساب اليوم ${t}</h3>مبيعات ن
 <div class="card"><h3>الأرباح</h3><table><tr><th></th><th>صافي المبيعات</th><th>تكلفة البضاعة</th><th>الربح</th><th>الهامش</th></tr>${tr}</table>${u?`<p class="red">⚠ ${u} بند مبيع بدون سعر شراء. أضف سعر الشراء من المخزن وسيُحسب الربح تلقائياً.</p>`:''}<small>الربح = صافي المبيعات − تكلفة البضاعة المباعة. التكلفة تُثبَّت وقت البيع (متوسط مرجح للتوريدات)، والمرتجع يخصم من المبيعات والتكلفة معاً، والحجز لا يدخل الأرباح قبل تحويله لفاتورة.</small></div>
 <div class="card">${vs.map(v=>`<button class="b s w" onclick="view(${v.n})">#${v.n} ${{sale:'بيع',ret:'مرتجع',res:'حجز'}[v.t]} ${f(tot(v.it))}</button>`).join('')||'لا توجد حركات اليوم'}</div>`}
 /* ---------- استعادة ---------- */
-function rest(){return`<div class="card"><h3>استعادة البيانات</h3><input type="file" accept=".json" onchange="rst(this.files[0])"></div>`}
+function rest(){return`<div class="card"><h3>استعادة البيانات</h3><input type="file" accept="*/*" onchange="rst(this.files[0])"></div>`}
 function rst(fl){if(!fl)return;if(!confirm('سيتم تبديل كل شيء بالبرنامج بالبيانات الموجودة في الملف. متابعة؟'))return;const r=new FileReader();r.onload=()=>{try{S=JSON.parse(r.result);if(!S.p)throw 0;save();go(0);alert('تمت الاستعادة')}catch(e){alert('ملف غير صالح')}};r.readAsText(fl)}
 /* ---------- الإعدادات ---------- */
 function set(){const s=S.s,I=(k,p,t='text')=>`<input type="${t}" placeholder="${p}" value="${s[k]||''}" onchange="S.s['${k}']=this.value;save()">`;
@@ -169,8 +169,13 @@ return`<div class="card"><h3>بيانات المحل</h3>${I('shop','اسم ال
 <div class="card"><h3>المظهر</h3><select onchange="S.s.dk=+this.value;go()"><option value="0">فاتح</option><option value="1" ${s.dk?'selected':''}>غامق</option></select></div>
 <div class="card"><h3>قالب الفاتورة والطابعة</h3>${I('ft','نص أسفل الفاتورة')}<select onchange="S.s.w=this.value;go()">${['58mm','80mm','210mm'].map(w=>`<option ${s.w==w?'selected':''}>${w}</option>`).join('')}</select><small>الطباعة تعمل عبر نظام الطباعة بالجهاز (طابعة حرارية متصلة بالبلوتوث/USB)</small></div>
 <div class="card"><button class="b" onclick="bk()">نسخ احتياطي</button><button class="b w" onclick="cl()">إغلاق الوردية</button></div>`}
-async function bk(){const b=new Blob([JSON.stringify(S)],{type:'application/json'}),nm='backup-'+td()+'.json';try{if(window.showSaveFilePicker){const h=await showSaveFilePicker({suggestedName:nm}),w=await h.createWritable();await w.write(b);await w.close();return}}catch(e){return}
-const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nm;a.click()}
+async function bk(){const j=JSON.stringify(S),nm='backup-'+td()+'.json',b=new Blob([j],{type:'application/json'}),C=window.Capacitor&&Capacitor.Plugins;
+try{
+if(C&&C.Filesystem&&C.Share){const w=await C.Filesystem.writeFile({path:nm,data:btoa(unescape(encodeURIComponent(j))),directory:'CACHE'});await C.Share.share({title:'نسخة احتياطية',url:w.uri,dialogTitle:'اختر مكان حفظ النسخة (ملفات / درايف / واتساب)'});return}
+if(window.showSaveFilePicker){const h=await showSaveFilePicker({suggestedName:nm}),w=await h.createWritable();await w.write(b);await w.close();return}
+const fl=new File([b],nm,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[fl]})){await navigator.share({files:[fl],title:'نسخة احتياطية'});return}
+}catch(e){if(e&&e.name=='AbortError')return}
+const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nm;document.body.appendChild(a);a.click();a.remove()}
 function cl(){const t=td(),vs=S.i.filter(v=>v.d==t&&v.t=='sale');M(`<h3>تفاصيل اليوم</h3>عدد الفواتير: ${vs.length}<br>الإجمالي: ${f(vs.reduce((a,v)=>a+tot(v.it),0))}<br>الربح: ${f(vs.reduce((a,v)=>a+pf(v.it),0))}<br><button class="b" onclick="S.log.push(td());save();M();alert('تم إغلاق الوردية')">خلاص كده المحل قفل</button>`)}
 /* ---------- القفل ---------- */
 function lock(){if(!S.s.pw)return go(0);$('lk').innerHTML=`<div class="ov"><div class="mo card"><h3>كلمة السر</h3><input id="lp" type="password"><button class="b" onclick="if($('lp').value==S.s.pw){$('lk').innerHTML='';go(0)}else alert('كلمة سر خاطئة')">دخول</button></div></div>`}
