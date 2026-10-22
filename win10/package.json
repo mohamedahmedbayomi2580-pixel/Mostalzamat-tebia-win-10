@@ -1,0 +1,23 @@
+{
+  "name": "cashier-win10",
+  "version": "1.0.0",
+  "description": "Cashier POS",
+  "author": "Cashier",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.mycashier.win10",
+    "productName": "Cashier",
+    "files": ["main.js", "www/**/*"],
+    "win": { "target": ["nsis", "portable"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "artifactName": "Cashier-Win10-Setup.${ext}" },
+    "portable": { "artifactName": "Cashier-Win10-Portable.${ext}" }
+  }
+}
